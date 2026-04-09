@@ -228,7 +228,7 @@ export default function Travels() {
                   <span>📅 {travel.date}</span>
                   <span>⏱️ {travel.duration}</span>
                 </div>
-                <p className="text-gray-600 mb-3">{travel.description}</p>
+                <p className="text-gray-600 mb-3 whitespace-pre-wrap">{travel.description}</p>
                 {travel.photos && travel.photos.length > 0 && (
                   <div className="mb-3 grid grid-cols-3 gap-2">
                     {travel.photos.map((photo, index) => (
