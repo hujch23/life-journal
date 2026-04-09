@@ -7,6 +7,7 @@ import Travels from './pages/Travels'
 import Diaries from './pages/Diaries'
 import Exercises from './pages/Exercises'
 import Notes from './pages/Notes'
+import Settings from './pages/Settings'
 
 function App() {
   useEffect(() => {
@@ -21,6 +22,7 @@ function App() {
         <Route path="/diaries" element={<Diaries />} />
         <Route path="/exercises" element={<Exercises />} />
         <Route path="/notes" element={<Notes />} />
+        <Route path="/settings" element={<Settings />} />
       </Routes>
     </Layout>
   )

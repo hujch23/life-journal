@@ -6,6 +6,7 @@ const navItems = [
   { path: '/diaries', label: '日记', icon: '📝' },
   { path: '/exercises', label: '运动', icon: '🏃' },
   { path: '/notes', label: '学习', icon: '📚' },
+  { path: '/settings', label: '设置', icon: '⚙️' },
 ]
 
 export default function Layout({ children }) {
