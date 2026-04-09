@@ -15,6 +15,7 @@ export default function Diaries() {
   const [diaries, setDiaries] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState(null)
+  const [expandedDiaries, setExpandedDiaries] = useState({})
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -70,6 +71,13 @@ export default function Diaries() {
     })
     setEditId(diary.id)
     setShowForm(true)
+  }
+
+  const toggleExpand = (id) => {
+    setExpandedDiaries(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }))
   }
 
   const getMoodEmoji = (mood) => {
@@ -211,7 +219,35 @@ export default function Diaries() {
                   </button>
                 </div>
                 </div>
-                <p className="text-gray-600 whitespace-pre-wrap">{diary.content}</p>
+                <div className="text-gray-600 whitespace-pre-wrap">
+                  {diary.content.length > 200 ? (
+                    <>
+                      {expandedDiaries[diary.id] ? (
+                        <>
+                          {diary.content}
+                          <button
+                            onClick={() => toggleExpand(diary.id)}
+                            className="text-green-500 hover:text-green-600 text-sm mt-2 inline-block"
+                          >
+                            收起
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          {diary.content.substring(0, 200)}...
+                          <button
+                            onClick={() => toggleExpand(diary.id)}
+                            className="text-green-500 hover:text-green-600 text-sm mt-2 inline-block"
+                          >
+                            展开
+                          </button>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    diary.content
+                  )}
+                </div>
               </div>
             </div>
           )) : (

@@ -5,6 +5,7 @@ export default function Travels() {
   const [travels, setTravels] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState(null)
+  const [expandedTravels, setExpandedTravels] = useState({})
   const [formData, setFormData] = useState({
     title: '',
     destination: '',
@@ -82,6 +83,13 @@ export default function Travels() {
     const photos = [...formData.photos]
     photos.splice(index, 1)
     setFormData({ ...formData, photos })
+  }
+
+  const toggleExpand = (id) => {
+    setExpandedTravels(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }))
   }
 
   return (
@@ -228,7 +236,35 @@ export default function Travels() {
                   <span>📅 {travel.date}</span>
                   <span>⏱️ {travel.duration}</span>
                 </div>
-                <p className="text-gray-600 mb-3 whitespace-pre-wrap">{travel.description}</p>
+                <div className="text-gray-600 mb-3 whitespace-pre-wrap">
+                  {travel.description.length > 200 ? (
+                    <>
+                      {expandedTravels[travel.id] ? (
+                        <>
+                          {travel.description}
+                          <button
+                            onClick={() => toggleExpand(travel.id)}
+                            className="text-primary-500 hover:text-primary-600 text-sm mt-2 inline-block"
+                          >
+                            收起
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          {travel.description.substring(0, 200)}...
+                          <button
+                            onClick={() => toggleExpand(travel.id)}
+                            className="text-primary-500 hover:text-primary-600 text-sm mt-2 inline-block"
+                          >
+                            展开
+                          </button>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    travel.description
+                  )}
+                </div>
                 {travel.photos && travel.photos.length > 0 && (
                   <div className="mb-3 grid grid-cols-3 gap-2">
                     {travel.photos.map((photo, index) => (
