@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getData, addItem, deleteItem, STORAGE_KEYS } from '../utils/storage'
+import { getData, addItem, updateItem, deleteItem, STORAGE_KEYS } from '../utils/storage'
 
 const moodOptions = [
   { value: 'happy', label: '开心', emoji: '😊' },
@@ -14,6 +14,7 @@ const weatherOptions = ['晴', '多云', '阴', '小雨', '大雨', '雪']
 export default function Diaries() {
   const [diaries, setDiaries] = useState([])
   const [showForm, setShowForm] = useState(false)
+  const [editId, setEditId] = useState(null)
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -28,9 +29,21 @@ export default function Diaries() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const newDiary = addItem(STORAGE_KEYS.DIARIES, formData)
-    setDiaries([newDiary, ...diaries])
+    
+    if (editId) {
+      // 编辑模式
+      const updatedDiary = updateItem(STORAGE_KEYS.DIARIES, editId, formData)
+      if (updatedDiary) {
+        setDiaries(diaries.map(diary => diary.id === editId ? updatedDiary : diary))
+      }
+    } else {
+      // 添加模式
+      const newDiary = addItem(STORAGE_KEYS.DIARIES, formData)
+      setDiaries([newDiary, ...diaries])
+    }
+    
     setShowForm(false)
+    setEditId(null)
     setFormData({
       title: '',
       content: '',
@@ -45,6 +58,18 @@ export default function Diaries() {
       const updated = deleteItem(STORAGE_KEYS.DIARIES, id)
       setDiaries(updated)
     }
+  }
+
+  const handleEdit = (diary) => {
+    setFormData({
+      title: diary.title,
+      content: diary.content,
+      date: diary.date,
+      mood: diary.mood,
+      weather: diary.weather
+    })
+    setEditId(diary.id)
+    setShowForm(true)
   }
 
   const getMoodEmoji = (mood) => {
@@ -63,13 +88,14 @@ export default function Diaries() {
           onClick={() => setShowForm(!showForm)}
           className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
         >
-          {showForm ? '取消' : '+ 写日记'}
+          {showForm ? '取消' : (editId ? '编辑日记' : '+ 写日记')}
         </button>
       </div>
 
-      {/* 添加表单 */}
+      {/* 添加/编辑表单 */}
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 shadow-sm space-y-4">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">{editId ? '编辑日记' : '写日记'}</h3>
           <div className="grid md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">日期</label>
@@ -168,14 +194,22 @@ export default function Diaries() {
                       <span>|</span>
                       <span>🌤️ {diary.weather}</span>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-800">{diary.title}</h3>
-                  </div>
+                  <h3 className="text-lg font-bold text-gray-800">{diary.title}</h3>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => handleEdit(diary)}
+                    className="text-gray-400 hover:text-blue-500 transition-colors p-2"
+                  >
+                    ✏️
+                  </button>
                   <button
                     onClick={() => handleDelete(diary.id)}
                     className="text-gray-400 hover:text-red-500 transition-colors p-2"
                   >
                     🗑️
                   </button>
+                </div>
                 </div>
                 <p className="text-gray-600 whitespace-pre-wrap">{diary.content}</p>
               </div>

@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react'
-import { getData, addItem, deleteItem, STORAGE_KEYS } from '../utils/storage'
+import { getData, addItem, updateItem, deleteItem, STORAGE_KEYS } from '../utils/storage'
 
 export default function Travels() {
   const [travels, setTravels] = useState([])
   const [showForm, setShowForm] = useState(false)
+  const [editId, setEditId] = useState(null)
   const [formData, setFormData] = useState({
     title: '',
     destination: '',
     date: '',
     duration: '',
     description: '',
-    highlights: ''
+    highlights: '',
+    photos: []
   })
 
   useEffect(() => {
@@ -19,12 +21,25 @@ export default function Travels() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const newTravel = addItem(STORAGE_KEYS.TRAVELS, {
+    const travelData = {
       ...formData,
       highlights: formData.highlights.split(',').map(h => h.trim()).filter(Boolean)
-    })
-    setTravels([newTravel, ...travels])
+    }
+    
+    if (editId) {
+      // 编辑模式
+      const updatedTravel = updateItem(STORAGE_KEYS.TRAVELS, editId, travelData)
+      if (updatedTravel) {
+        setTravels(travels.map(travel => travel.id === editId ? updatedTravel : travel))
+      }
+    } else {
+      // 添加模式
+      const newTravel = addItem(STORAGE_KEYS.TRAVELS, travelData)
+      setTravels([newTravel, ...travels])
+    }
+    
     setShowForm(false)
+    setEditId(null)
     setFormData({ title: '', destination: '', date: '', duration: '', description: '', highlights: '' })
   }
 
@@ -33,6 +48,40 @@ export default function Travels() {
       const updated = deleteItem(STORAGE_KEYS.TRAVELS, id)
       setTravels(updated)
     }
+  }
+
+  const handleEdit = (travel) => {
+    setFormData({
+      title: travel.title,
+      destination: travel.destination,
+      date: travel.date,
+      duration: travel.duration,
+      description: travel.description,
+      highlights: travel.highlights?.join(', ') || '',
+      photos: travel.photos || []
+    })
+    setEditId(travel.id)
+    setShowForm(true)
+  }
+
+  const handlePhotoUpload = (e) => {
+    const files = e.target.files
+    const photos = [...formData.photos]
+    
+    Array.from(files).forEach(file => {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        photos.push(event.target.result)
+        setFormData({ ...formData, photos })
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const handleRemovePhoto = (index) => {
+    const photos = [...formData.photos]
+    photos.splice(index, 1)
+    setFormData({ ...formData, photos })
   }
 
   return (
@@ -47,13 +96,14 @@ export default function Travels() {
           onClick={() => setShowForm(!showForm)}
           className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
         >
-          {showForm ? '取消' : '+ 添加旅行'}
+          {showForm ? '取消' : (editId ? '编辑旅行' : '+ 添加旅行')}
         </button>
       </div>
 
-      {/* 添加表单 */}
+      {/* 添加/编辑表单 */}
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 shadow-sm space-y-4">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">{editId ? '编辑旅行记录' : '添加旅行记录'}</h3>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">旅行标题</label>
@@ -119,6 +169,32 @@ export default function Travels() {
               placeholder="如：西湖, 灵隐寺, 宋城"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">照片</label>
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={handlePhotoUpload}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+            {formData.photos.length > 0 && (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {formData.photos.map((photo, index) => (
+                  <div key={index} className="relative">
+                    <img src={photo} alt={`旅行照片 ${index + 1}`} className="w-full h-24 object-cover rounded-lg" />
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePhoto(index)}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="flex gap-3">
             <button
               type="submit"
@@ -153,6 +229,13 @@ export default function Travels() {
                   <span>⏱️ {travel.duration}</span>
                 </div>
                 <p className="text-gray-600 mb-3">{travel.description}</p>
+                {travel.photos && travel.photos.length > 0 && (
+                  <div className="mb-3 grid grid-cols-3 gap-2">
+                    {travel.photos.map((photo, index) => (
+                      <img key={index} src={photo} alt={`旅行照片 ${index + 1}`} className="w-full h-16 object-cover rounded-lg" />
+                    ))}
+                  </div>
+                )}
                 {travel.highlights && travel.highlights.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {travel.highlights.map((h, i) => (
@@ -163,12 +246,20 @@ export default function Travels() {
                   </div>
                 )}
               </div>
-              <button
-                onClick={() => handleDelete(travel.id)}
-                className="text-gray-400 hover:text-red-500 transition-colors p-2"
-              >
-                🗑️
-              </button>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => handleEdit(travel)}
+                  className="text-gray-400 hover:text-blue-500 transition-colors p-2"
+                >
+                  ✏️
+                </button>
+                <button
+                  onClick={() => handleDelete(travel.id)}
+                  className="text-gray-400 hover:text-red-500 transition-colors p-2"
+                >
+                  🗑️
+                </button>
+              </div>
             </div>
           </div>
         )) : (
